@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Axolotl Clicker</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+        :root {
+            --primary-color: #f7a8b8;
+            --secondary-color: #6a0572;
+            --accent-color: #fce38a;
+            --background-color: #f0f4f8;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        .game-container {
+            background: #fff;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        h1 {
+            color: var(--secondary-color);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+
+        .stat-item {
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 400;
+            color: #fff5;
+            margin-top: 5px;
+        }
+        
+        .image-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            outline: none;
+            transition: transform 0.1s ease-out;
+            position: relative;
+            margin: 20px 0;
+            padding: 0;
+        }
+        
+        .image-button:active {
+            transform: scale(0.95);
+        }
+
+        .clickable-image {
+            width: 200px;
+            height: auto;
+            border-radius: 50%; /* Makes the image circular if desired */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: block;
+            transition: transform 0.2s ease-out;
+        }
+        
+        .upgrade-button {
+            font-size: 1rem;
+            font-weight: 700;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            color: white;
+            background: linear-gradient(145deg, #6a0572, #9a1a9e);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+            margin-top: 10px;
+        }
+
+        .upgrade-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        .upgrade-button:active {
+            transform: translateY(0);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .upgrade-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .float-text {
+            position: absolute;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--secondary-color);
+            opacity: 0;
+            pointer-events: none;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: floatUpAndFade 1s forwards;
+            text-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes floatUpAndFade {
+            0% {
+                transform: translate(-50%, -50%);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -150%);
+                opacity: 0;
+            }
+        }
+
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--accent-color);
+            color: var(--secondary-color);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .message-box.show {
+            display: block;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>Axolotl Clicker</h1>
+
+        <div class="stats">
+            <div class="stat-item">
+                <span id="points-display">0</span>
+                <span class="stat-label">Points</span>
+            </div>
+            <div class="stat-item">
+                <span id="power-display">1</span>
+                <span class="stat-label">Click Power</span>
+            </div>
+        </div>
+
+        <button id="image-button" class="image-button">
+            <img src="smile.WEBP" alt="A smiling face" class="clickable-image">
+        </button>
+        
+        <button id="upgrade-button" class="upgrade-button">
+            Upgrade Click Power (Cost: <span id="upgrade-cost-display">10</span> Points)
+        </button>
+
+    </div>
+
+    <!-- Custom message box for feedback -->
+    <div id="message-box" class="message-box"></div>
+
+
+    <script>
+        // Game state variables
+        let points = 0;
+        let clickPower = 1;
+        let upgradeCost = 10;
+
+        // Get references to HTML elements
+        const pointsDisplay = document.getElementById('points-display');
+        const powerDisplay = document.getElementById('power-display');
+        const upgradeCostDisplay = document.getElementById('upgrade-cost-display');
+        const imageButton = document.getElementById('image-button');
+        const upgradeButton = document.getElementById('upgrade-button');
+        const messageBox = document.getElementById('message-box');
+
+        // Function to update the UI with current game state
+        function updateUI() {
+            pointsDisplay.textContent = points;
+            powerDisplay.textContent = clickPower;
+            upgradeCostDisplay.textContent = upgradeCost;
+
+            // Enable/disable the upgrade button based on points
+            if (points >= upgradeCost) {
+                upgradeButton.disabled = false;
+            } else {
+                upgradeButton.disabled = true;
+            }
+        }
+
+        // Function to handle the image click
+        function handleImageClick(event) {
+            // Add points based on current click power
+            points += clickPower;
+
+            // Create a floating text element to show points gained
+            const floatText = document.createElement('div');
+            floatText.className = 'float-text';
+            floatText.textContent = `+${clickPower}`;
+            imageButton.appendChild(floatText);
+
+            // Remove the element after the animation is finished
+            setTimeout(() => {
+                if (imageButton.contains(floatText)) {
+                    imageButton.removeChild(floatText);
+                }
+            }, 1000);
+
+            // Update the display
+            updateUI();
+        }
+
+        // Function to handle the upgrade button click
+        function handleUpgrade() {
+            if (points >= upgradeCost) {
+                // Deduct cost from points
+                points -= upgradeCost;
+
+                // Double the click power and upgrade cost
+                clickPower *= 2;
+                upgradeCost *= 2;
+
+                // Update the display
+                updateUI();
+            } else {
+                // Show a message if the player doesn't have enough points
+                showMessage(`Not enough points! You need ${upgradeCost} points.`);
+            }
+        }
+
+        // Function to show a temporary message
+        function showMessage(text) {
+            messageBox.textContent = text;
+            messageBox.classList.add('show');
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+            }, 2000);
+        }
+
+        // Add event listeners to the buttons
+        imageButton.addEventListener('click', handleImageClick);
+        upgradeButton.addEventListener('click', handleUpgrade);
+
+        // Initial UI update when the page loads
+        document.addEventListener('DOMContentLoaded', updateUI);
+
+    </script>
+</body>
+</html>
